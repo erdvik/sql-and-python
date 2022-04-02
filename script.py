@@ -1,6 +1,7 @@
 import sqlite3
 from numpy.random import uniform
 import time
+import csv
 
 def main():
     task1 = Task1()
@@ -9,7 +10,14 @@ def main():
     task2 = Task2()
     diff_2 = task1.compare_speed(task2.db_filtering_python, task2.db_filtering_sql)
     print(diff_2)
-
+    task3 = Task3()
+    fieldnames = ['Taken', 'Temp']
+    rows = [
+        {'Taken': 619, 'Temp': -21.5},
+        {'Taken': 622, 'Temp': -15.5}]
+    task3.create_csv_file(fieldnames, rows)
+    statement = task3.make_sql_statements_from_csv('temps.csv')
+    print(statement)
 
 #Filling a Table vs. Printing Values
 class Task1:
@@ -94,8 +102,42 @@ class Task2:
         connection_backup.commit()
         connection_backup.close()
 
+#Generating Insert Statements
+class Task3:
+    def create_csv_file(self, fieldnames, rows):
+        with open('temps.csv', 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
 
+    
+    def make_sql_statements_from_csv(self, file):
 
+        with open(file, 'r') as csvfile:
+            csvreader = csv.reader(csvfile)
+            headers = next(csvreader)
+            rows = []
+            for row in csvreader:
+                rows.append(row)
+            print(headers) 
+            print(rows)
+
+            #Below code needs refactoring(!)
+            headers_str = ''
+            for header in headers:
+                headers_str += '{}, '.format(header)
+
+            values_str = ''
+            for row in rows:
+                for value in row:
+                    values_str += '{}, '.format(value)
+
+            headers_str = headers_str[:-2]
+            values_str = values_str[:-2]
+
+            query = "INSERT INTO Survey({headers_str}) VALUES ({values_str});".format(headers_str=headers_str, values_str=values_str)
+            return query
 
 
 if __name__ == "__main__":
